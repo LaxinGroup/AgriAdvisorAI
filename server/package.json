@@ -1,0 +1,22 @@
+{
+  "name": "workplace-assistant-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.15.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "packageManager": "pnpm@12.15.0"
+}

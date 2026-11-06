@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mobile-taste": {
+      "source": "draftbit/mobile-taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/mobile-taste/SKILL.md",
+      "computedHash": "ef44362f66b5736408c70f63c6ccdb1d2845bc15e458e0bc0cb9d03d990dd798"
+    }
+  }
+}

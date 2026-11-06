@@ -1,0 +1,23 @@
+Project: AgriAdvisor AI mobile app and API
+
+1. Frontend
+- Use Expo/React Native as the mobile client and keep the app mobile-first.
+- Add a chat-style screen matching the provided Figma flow: conversation list, prompt input, action buttons, warnings, and specialist handoff state.
+- Keep API access in a typed single module and use environment configuration for host URLs.
+- Validate with Expo web export and TypeScript checks.
+
+2. Backend
+- Use Node.js + Express.
+- Expose a health check endpoint and a safe POST /api/assistant route.
+- Validate payloads, reject empty/oversized text, and return JSON errors instead of inventing answers.
+- Keep the assistant source-free until an approved knowledge base or live support integration is added.
+
+3. Scope and constraints
+- Do not invent policies, citations, or support outcomes.
+- Preserve the warning flow for ineligible or uncertain cases.
+- Keep implementation small and focused; do not add unrelated dependencies or broad feature work.
+
+4. Verification
+- Run Node test suite for the backend.
+- Run Expo export and TypeScript checks for the mobile app.
+- Report existing starter template errors separately from the app work if they remain untouched.
