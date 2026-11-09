@@ -9,10 +9,12 @@ The posture is unified-brand with native navigation chrome.
 
 ## Nav Read
 
-- One primary destination: the Assistant conversation.
-- Keep the existing Expo Router route and hidden single-tab scaffold for this first
-  slice; do not introduce additional destinations, sheets, or modals.
-- Entry point: the Assistant screen.
+- Four primary destinations in the persistent bottom tab bar: Ask, Sources, Support,
+  and Workspace.
+- Ask is the existing Assistant conversation. Sources, Support, and Workspace have
+  placeholder destinations until approved content or integrations are connected.
+- No additional sheets or modals.
+- Entry point: Ask.
 - Deep links: none added in this slice.
 - Android back: Expo Router default behavior.
 

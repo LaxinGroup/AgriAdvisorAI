@@ -21,9 +21,11 @@ interaction references, not as an approved source of policy or troubleshooting f
 
 1. Use the user's `language_detected` / `intent_category` response schema in both client
    and server, with strict runtime validation in the client.
-2. Keep the UI as one assistant conversation. Use NativeWind tokens, safe areas, a
-   virtualized message list, accessible composer controls, and clear citation and
-   handoff containers.
+2. Keep the Assistant conversation as the Ask destination. Add the Figma-referenced
+   bottom tabs for Ask, Sources, Support, and Workspace, with simple placeholder states
+   for destinations that do not yet have connected content. Use NativeWind tokens, safe
+   areas, a virtualized message list, accessible composer controls, and clear citation
+   and handoff containers.
 3. Use a localized, safe fallback. Eligibility questions must never be decided and route
    to `eligibility_review`; missing approved knowledge routes to `content_curators`.
    Both remain explicit that live routing is not connected.
@@ -48,8 +50,14 @@ interaction references, not as an approved source of policy or troubleshooting f
 - `server/index.js` — pass the requested locale into the response builder.
 - `server/assistant.js` — validate input and return localized safe fallback payloads.
 - `server/test/assistant.test.js` — test the new response contract and fallback paths.
+- `prompts/figma-navigation-plan.md` — record the approved navigation implementation plan.
+- `mobile/app/(tabs)/_layout.tsx` — configure the visible four-item bottom tab bar.
+- `mobile/app/(tabs)/two.tsx` — move and repurpose the scaffold route as Sources.
+- `mobile/app/(tabs)/support.tsx` and `mobile/app/(tabs)/workspace.tsx` — add placeholder
+  destinations for the other Figma tabs.
 
-Do not edit other files. If the implementation requires another file or a materially
+The approved navigation work is limited to the files listed above. For other tasks, do
+not edit unlisted files; if an implementation requires another file or a materially
 different approach, stop and ask for approval first.
 
 ## Validation
