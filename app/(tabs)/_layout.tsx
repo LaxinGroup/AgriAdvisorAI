@@ -1,10 +1,6 @@
+import { Tabs } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
-
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { useColorScheme } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -12,55 +8,81 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
+        tabBarActiveTintColor: '#476653',
+        tabBarInactiveTintColor: colorScheme === 'dark' ? '#a1a1aa' : '#64748b',
+        tabBarLabelStyle: {
+          fontSize: 11,
+        },
+        tabBarStyle: {
+          backgroundColor: colorScheme === 'dark' ? '#09090b' : '#ffffff',
+          borderTopColor: colorScheme === 'dark' ? '#27272a' : '#e2e8f0',
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => (
+          title: 'Ask',
+          tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
+                ios: 'bubble.left',
+                android: 'chat_bubble_outline',
+                web: 'chat_bubble_outline',
               }}
+              size={size}
               tintColor={color}
-              size={28}
             />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <SymbolView
-                    name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-                    size={25}
-                    tintColor={Colors[colorScheme].text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
           ),
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="sources"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => (
+          title: 'Sources',
+          tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
+                ios: 'book.closed',
+                android: 'menu_book',
+                web: 'menu_book',
               }}
+              size={size}
               tintColor={color}
-              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="support"
+        options={{
+          title: 'Support',
+          tabBarIcon: ({ color, size }) => (
+            <SymbolView
+              name={{
+                ios: 'headphones',
+                android: 'headset_mic',
+                web: 'headset_mic',
+              }}
+              size={size}
+              tintColor={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="workspace"
+        options={{
+          title: 'Workspace',
+          tabBarIcon: ({ color, size }) => (
+            <SymbolView
+              name={{
+                ios: 'square.grid.2x2',
+                android: 'grid_view',
+                web: 'grid_view',
+              }}
+              size={size}
+              tintColor={color}
             />
           ),
         }}
