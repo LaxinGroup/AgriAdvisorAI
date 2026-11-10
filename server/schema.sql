@@ -33,3 +33,11 @@ CREATE TABLE IF NOT EXISTS curator_allowlist (
   auth_user_id text PRIMARY KEY,
   added_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  auth_user_id text PRIMARY KEY,
+  display_name text NOT NULL CHECK (length(trim(display_name)) BETWEEN 1 AND 100),
+  preferred_language text NOT NULL CHECK (preferred_language IN ('en', 'afr', 'es', 'fr')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

@@ -10,6 +10,19 @@ import { createAuthentication, createCuratorAuthorization } from './auth.js';
 import { sourceRepository } from './database.js';
 import { SourceIngestionError, createSourceIngestion } from './source-ingestion.js';
 
+const PROFILE_LANGUAGES = new Set(['en', 'afr', 'es', 'fr']);
+
+function validateProfileRequest(body) {
+  const displayName = typeof body?.displayName === 'string' ? body.displayName.trim() : '';
+  if (displayName.length < 1 || displayName.length > 100) {
+    return { valid: false, error: 'Display name must be 1 to 100 characters.' };
+  }
+  if (!PROFILE_LANGUAGES.has(body?.preferredLanguage)) {
+    return { valid: false, error: 'Preferred language must be en, afr, es, or fr.' };
+  }
+  return { valid: true, displayName, preferredLanguage: body.preferredLanguage };
+}
+
 export function createApp({
   authUrl,
   verifyToken,
@@ -67,6 +80,26 @@ export function createApp({
 
     const matches = await repository.searchSources(validation.message, 4);
     response.json(createAssistantResponse(validation.message, validation.locale, matches));
+  });
+
+  app.post('/api/profile', authenticate, async (request, response) => {
+    const validation = validateProfileRequest(request.body);
+    if (!validation.valid) {
+      response.status(400).json({ error: validation.error });
+      return;
+    }
+
+    const profile = await repository.upsertProfile(
+      request.auth.userId,
+      validation.displayName,
+      validation.preferredLanguage,
+    );
+    response.json({
+      profile: {
+        displayName: profile.display_name,
+        preferredLanguage: profile.preferred_language,
+      },
+    });
   });
 
   app.get('/api/sources', authenticate, async (request, response) => {

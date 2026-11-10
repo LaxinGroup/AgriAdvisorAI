@@ -1,3 +1,4 @@
+import { Link, type Href } from 'expo-router';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -101,6 +102,17 @@ export default function SignInScreen() {
               {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Text>
           </Pressable>
+
+          <Link href={'/(auth)/register' as Href} replace asChild>
+            <Pressable
+              accessibilityRole="link"
+              className="mt-5 min-h-11 items-center justify-center active:opacity-75">
+              <Text className="text-sm text-slate-600 dark:text-slate-300">
+                Don&apos;t have an account?{' '}
+                <Text className="font-semibold text-brand-600">Create one</Text>
+              </Text>
+            </Pressable>
+          </Link>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -8,8 +8,9 @@ URLs and short-lived Neon Auth JWTs.
 ## 1. Configure Neon Auth
 
 1. Enable Neon Auth for the project branch and use the Better Auth provider.
-2. Enable email and password sign-in and disable public sign-up. Provision staff
-   accounts through the Neon Auth user directory.
+2. Enable email and password sign-in and enable public sign-up so users can
+   register from the app. Leave email verification off; new users are signed in
+   immediately after registering.
 3. Enable the JWT plugin for the auth instance. The API verifies bearer tokens using
    the branch JWKS endpoint at `<NEON_AUTH_URL>/.well-known/jwks.json`.
 4. Copy the branch's Neon Auth base URL. Set it as `NEON_AUTH_URL` for the server and
@@ -29,6 +30,10 @@ another role allowed to create tables and indexes. It creates:
 - `knowledge_sources` for source metadata and object keys
 - `knowledge_source_chunks` for extracted text, locations, and full-text search
 - `curator_allowlist` for the user IDs permitted to manage shared sources
+- `user_profiles` for each registered user's display name and preferred language,
+  keyed by Neon Auth user ID
+
+Neon Auth stores account names, emails, and passwords in its own `neon_auth` schema.
 
 The API makes a source available to search after extraction and all chunk inserts
 complete successfully.

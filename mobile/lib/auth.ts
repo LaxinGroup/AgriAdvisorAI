@@ -25,6 +25,7 @@ type AuthContextValue = {
   refreshSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   state: AuthState;
   user: AuthUser | null;
 };
@@ -54,12 +55,16 @@ function getNeonAuthClient() {
   return neonAuthClient;
 }
 
-export async function getAccessToken() {
-  const result = await getNeonAuthClient().getSession();
+// Returns a signed JWT for the API. The session token from getSession() is an
+// opaque ID that the server cannot verify, so the JWT is requested from /token.
+export async function getAccessToken(): Promise<string> {
+  const result = await getNeonAuthClient().$fetch<{ token: string }>('/token', {
+    method: 'GET',
+  });
   if (result.error) {
-    throw new Error(result.error.message);
+    throw new Error(result.error.message ?? 'Your sign-in session has expired. Sign in again.');
   }
-  const token = result.data?.session?.token;
+  const token = result.data?.token;
   if (!token) {
     throw new Error('Your sign-in session has expired. Sign in again.');
   }
@@ -104,6 +109,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await refreshSession();
   }, [refreshSession]);
 
+  // Creates the Neon Auth account and its session. The caller refreshes the
+  // session afterwards so it can save the profile before the screen changes.
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const result = await getNeonAuthClient().signUp.email({ name, email, password });
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Registration failed. Check your details and retry.');
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     const result = await getNeonAuthClient().signOut();
     if (result.error) {
@@ -119,8 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshSession]);
 
   const value = useMemo(
-    () => ({ error, refreshSession, signIn, signOut, state, user }),
-    [error, refreshSession, signIn, signOut, state, user],
+    () => ({ error, refreshSession, signIn, signOut, signUp, state, user }),
+    [error, refreshSession, signIn, signOut, signUp, state, user],
   );
   return createElement(AuthContext.Provider, { value }, children);
 }

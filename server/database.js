@@ -95,6 +95,20 @@ export const sourceRepository = {
     return result.rowCount > 0;
   },
 
+  async upsertProfile(userId, displayName, preferredLanguage) {
+    const result = await getPool().query(
+      `INSERT INTO user_profiles (auth_user_id, display_name, preferred_language)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (auth_user_id) DO UPDATE
+         SET display_name = EXCLUDED.display_name,
+             preferred_language = EXCLUDED.preferred_language,
+             updated_at = now()
+       RETURNING display_name, preferred_language`,
+      [userId, displayName, preferredLanguage],
+    );
+    return result.rows[0];
+  },
+
   async searchSources(query, limit = 4) {
     const result = await getPool().query(
       `WITH search_query AS (
