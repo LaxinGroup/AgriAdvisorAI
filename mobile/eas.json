@@ -10,14 +10,18 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": {
-        "buildType": "apk"
+      "android": {"buildType": "apk"},
+      "env":{
+        "EXPO_PUBLIC_API_URL": "https://agriadvisorai-33wk.onrender.com/api",
+        "EXPO_PUBLIC_NEON_AUTH_URL": "https://ep-shy-king-b4ctradh.neonauth.c-6.us-east-2.aws.neon.tech/neondb/auth"
       }
     },
     "production": {
       "autoIncrement": true,
-      "android": {
-        "buildType": "apk"
+      "android": {  "buildType": "apk"},
+      "env":{
+        "EXPO_PUBLIC_API_URL": "https://agriadvisorai-33wk.onrender.com/api",
+        "EXPO_PUBLIC_NEON_AUTH_URL": "https://ep-shy-king-b4ctradh.neonauth.c-6.us-east-2.aws.neon.tech/neondb/auth"
       }
     }
   },
