@@ -14,9 +14,15 @@
           "en",
           "af",
           "es",
+          "fr",
+          "en",
+          "af",
+          "es",
           "fr"
-        ]
-      }
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "AgriAdvisor"
     },
     "android": {
       "adaptiveIcon": {

@@ -32,6 +32,10 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Native apps send no Origin header, and Neon Auth rejects sign-up and sign-in
+// without one. This origin must be listed in Neon Auth's trusted domains.
+const NATIVE_AUTH_ORIGIN = 'https://agriadvisorai-33wk.onrender.com';
+
 function createNeonAuthClient() {
   const baseURL = process.env.EXPO_PUBLIC_NEON_AUTH_URL?.trim();
   if (!baseURL) {
@@ -40,11 +44,14 @@ function createNeonAuthClient() {
 
   return createAuthClient({
     baseURL,
-    fetchOptions: { credentials: 'include' },
+    fetchOptions: {
+      credentials: 'include',
+      ...(Platform.OS === 'web' ? {} : { headers: { Origin: NATIVE_AUTH_ORIGIN } }),
+    },
     plugins:
       Platform.OS === 'web'
         ? [jwtClient()]
-        : [jwtClient(), expoClient({ storage: SecureStore, scheme: 'mobile' })],
+        : [jwtClient(), expoClient({ storage: SecureStore, scheme: 'mobile', cookiePrefix: 'neon-auth' })],
   });
 }
 
