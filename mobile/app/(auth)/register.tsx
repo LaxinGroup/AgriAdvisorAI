@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { SupportedLocale } from '@/lib/assistant';
+import { PasswordInput, usePlaceholderColor } from '@/components/PasswordInput';
 import { useAuth } from '@/lib/auth';
 import { saveProfile } from '@/lib/profile';
 
@@ -32,6 +33,7 @@ function toErrorMessage(error: unknown, fallback: string): string {
 
 export default function RegisterScreen() {
   const { refreshSession, signUp } = useAuth();
+  const placeholderColor = usePlaceholderColor();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -91,6 +93,7 @@ export default function RegisterScreen() {
                 editable={!accountCreated}
                 onChangeText={setName}
                 placeholder="Your name"
+                placeholderTextColor={placeholderColor}
                 returnKeyType="next"
                 textContentType="name"
                 value={name}
@@ -109,6 +112,7 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 onChangeText={setEmail}
                 placeholder="name@organization.org"
+                placeholderTextColor={placeholderColor}
                 returnKeyType="next"
                 textContentType="emailAddress"
                 value={email}
@@ -117,15 +121,13 @@ export default function RegisterScreen() {
 
             <View className="mt-5">
               <Text className={LABEL_CLASS}>Password</Text>
-              <TextInput
+              <PasswordInput
                 accessibilityLabel="Password"
                 autoComplete="new-password"
-                className={INPUT_CLASS}
                 editable={!accountCreated}
                 onChangeText={setPassword}
                 placeholder="Password"
                 returnKeyType="done"
-                secureTextEntry
                 textContentType="newPassword"
                 value={password}
               />

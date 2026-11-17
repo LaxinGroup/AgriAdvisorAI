@@ -10,10 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PasswordInput, usePlaceholderColor } from '@/components/PasswordInput';
 import { useAuth } from '@/lib/auth';
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
+  const placeholderColor = usePlaceholderColor();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function SignInScreen() {
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="name@organization.org"
+              placeholderTextColor={placeholderColor}
               returnKeyType="next"
               textContentType="emailAddress"
               value={email}
@@ -71,15 +74,13 @@ export default function SignInScreen() {
             <Text className="mb-2 text-sm font-medium text-slate-800 dark:text-slate-200">
               Password
             </Text>
-            <TextInput
+            <PasswordInput
               accessibilityLabel="Password"
               autoComplete="current-password"
-              className="min-h-12 rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
               onChangeText={setPassword}
               onSubmitEditing={() => void handleSignIn()}
               placeholder="Password"
               returnKeyType="go"
-              secureTextEntry
               textContentType="password"
               value={password}
             />
