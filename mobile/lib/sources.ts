@@ -1,6 +1,7 @@
 import type { DocumentPickerAsset } from 'expo-document-picker';
 
 import { getAccessToken } from '@/lib/auth';
+import { TranslatableError } from '@/lib/translations';
 
 export type KnowledgeSource = {
   id: string;
@@ -51,7 +52,7 @@ async function request(
       headers,
     });
   } catch {
-    throw new Error('The source service is unavailable. Check the API connection and retry.');
+    throw new TranslatableError('error.sourceServiceUnavailable');
   }
 }
 
@@ -60,18 +61,18 @@ async function getErrorMessage(response: Response) {
   try {
     payload = await response.json();
   } catch {
-    throw new Error('The source service returned an invalid response.');
+    throw new TranslatableError('error.sourceInvalidResponse');
   }
   if (isRecord(payload) && typeof payload.error === 'string') {
     throw new Error(payload.error);
   }
-  throw new Error(`The source request failed with status ${response.status}.`);
+  throw new TranslatableError('error.sourceRequestFailed', { status: response.status });
 }
 
 async function getCreatedSource(response: Response): Promise<KnowledgeSource> {
   const payload: unknown = await response.json();
   if (!isRecord(payload) || !isKnowledgeSource(payload.source)) {
-    throw new Error('The source service returned data in an unexpected format.');
+    throw new TranslatableError('error.sourceUnexpectedFormat');
   }
   return payload.source;
 }
@@ -86,7 +87,7 @@ export async function listSources(): Promise<SourceListResponse> {
     !payload.sources.every(isKnowledgeSource) ||
     typeof payload.canManage !== 'boolean'
   ) {
-    throw new Error('The source service returned data in an unexpected format.');
+    throw new TranslatableError('error.sourceUnexpectedFormat');
   }
   return { sources: payload.sources, canManage: payload.canManage };
 }
@@ -115,19 +116,19 @@ export async function addPdfSource(asset: DocumentPickerAsset) {
   const hasPdfMimeType = asset.mimeType === 'application/pdf';
   const hasPdfExtension = asset.name.toLowerCase().endsWith('.pdf');
   if (!hasPdfMimeType && !hasPdfExtension) {
-    throw new Error('Choose a PDF file.');
+    throw new TranslatableError('error.choosePdf');
   }
   if (asset.size !== undefined && asset.size > 10 * 1024 * 1024) {
-    throw new Error('PDF files must be 10 MB or smaller.');
+    throw new TranslatableError('error.pdfTooLarge');
   }
 
   let file: Blob;
   try {
     const fileResponse = await fetch(asset.uri);
-    if (!fileResponse.ok) throw new Error('Could not read the selected PDF.');
+    if (!fileResponse.ok) throw new TranslatableError('error.pdfUnreadable');
     file = await fileResponse.blob();
   } catch {
-    throw new Error('Could not read the selected PDF.');
+    throw new TranslatableError('error.pdfUnreadable');
   }
 
   const formData = new FormData();

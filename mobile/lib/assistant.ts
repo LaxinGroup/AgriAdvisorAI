@@ -1,4 +1,5 @@
 import { getAccessToken } from '@/lib/auth';
+import { TranslatableError } from '@/lib/translations';
 
 export type SupportedLocale = 'en' | 'afr' | 'es' | 'fr';
 export type IntentCategory = 'standard_query' | 'eligibility_check' | 'escalation_required';
@@ -110,26 +111,24 @@ export async function askAssistant(
       body: JSON.stringify({ message, locale }),
     });
   } catch {
-    throw new Error('The assistant server is unavailable.');
+    throw new TranslatableError('error.assistantUnavailable');
   }
 
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    throw new Error('The assistant server returned an invalid response.');
+    throw new TranslatableError('error.assistantInvalidResponse');
   }
 
   if (!response.ok) {
-    const errorMessage =
-      isRecord(payload) && isString(payload.error)
-        ? payload.error
-        : 'The assistant server rejected the request.';
-    throw new Error(errorMessage);
+    throw isRecord(payload) && isString(payload.error)
+      ? new Error(payload.error)
+      : new TranslatableError('error.assistantRejected');
   }
 
   if (!isAssistantResponse(payload)) {
-    throw new Error('The assistant server returned a response in an unexpected format.');
+    throw new TranslatableError('error.assistantUnexpectedFormat');
   }
 
   return payload;

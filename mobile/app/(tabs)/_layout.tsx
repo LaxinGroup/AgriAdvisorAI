@@ -2,8 +2,11 @@ import { Tabs } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useColorScheme } from 'react-native';
 
+import { useLanguage } from '@/lib/i18n';
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -22,7 +25,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Ask',
+          title: t('tabs.ask'),
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{
@@ -39,7 +42,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sources"
         options={{
-          title: 'Sources',
+          title: t('tabs.sources'),
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{
@@ -56,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="support"
         options={{
-          title: 'Support',
+          title: t('tabs.support'),
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{
@@ -73,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="workspace"
         options={{
-          title: 'Workspace',
+          title: t('tabs.workspace'),
           tabBarIcon: ({ color, size }) => (
             <SymbolView
               name={{

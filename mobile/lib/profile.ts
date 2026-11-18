@@ -1,5 +1,6 @@
 import type { SupportedLocale } from '@/lib/assistant';
 import { getAccessToken } from '@/lib/auth';
+import { TranslatableError } from '@/lib/translations';
 
 export type UserProfile = {
   displayName: string;
@@ -13,10 +14,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function getErrorMessage(payload: unknown): string {
+function getError(payload: unknown): Error {
   return isRecord(payload) && typeof payload.error === 'string'
-    ? payload.error
-    : 'Your profile could not be saved.';
+    ? new Error(payload.error)
+    : new TranslatableError('error.profileSaveFailed');
 }
 
 export async function saveProfile(profile: UserProfile): Promise<void> {
@@ -33,7 +34,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
       body: JSON.stringify(profile),
     });
   } catch {
-    throw new Error('The server is unavailable. Your profile was not saved.');
+    throw new TranslatableError('error.profileServerUnavailable');
   }
 
   if (!response.ok) {
@@ -43,6 +44,6 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
     } catch {
       // Use the default message below.
     }
-    throw new Error(getErrorMessage(payload));
+    throw getError(payload);
   }
 }

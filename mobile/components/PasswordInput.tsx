@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { useLanguage } from '@/lib/i18n';
 
 // Placeholder text is dimmer than the field labels (slate-800 / slate-200).
 export function usePlaceholderColor() {
@@ -13,6 +14,7 @@ type PasswordInputProps = Omit<TextInputProps, 'secureTextEntry' | 'placeholderT
 
 // Password field that starts hidden, with an eye button to show or hide it.
 export function PasswordInput(props: PasswordInputProps) {
+  const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const placeholderColor = usePlaceholderColor();
 
@@ -27,7 +29,7 @@ export function PasswordInput(props: PasswordInputProps) {
         secureTextEntry={!isVisible}
       />
       <Pressable
-        accessibilityLabel={isVisible ? 'Hide password' : 'Show password'}
+        accessibilityLabel={isVisible ? t('password.hide') : t('password.show')}
         accessibilityRole="button"
         className="h-11 w-11 items-center justify-center active:opacity-75"
         hitSlop={4}

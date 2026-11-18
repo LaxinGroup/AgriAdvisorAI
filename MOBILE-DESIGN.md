@@ -28,9 +28,11 @@ The posture is unified-brand with native navigation chrome.
 
 - The API returns a safe human-review fallback until an approved knowledge base and
   live-support integration are connected.
-- Supported response locales in this slice: English (`en`), Afrikaans (`afr`), Spanish
-  (`es`), and French (`fr`). The device locale is used; unsupported locales fall back
-  to English.
+- Supported app languages: English (`en`), Afrikaans (`afr`), Spanish (`es`), and
+  French (`fr`). The app starts in English. Users change the language from the
+  top-right dropdown on the sign-in screen or the preferred-language buttons when
+  registering; the choice is saved on the device and also sets the assistant's
+  response language. Text without a translation is shown in English.
 - No citation is displayed unless it is returned by a future approved source.
 - Network failure is shown inline with a retry action; conversation content is not cached.
 

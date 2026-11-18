@@ -13,6 +13,8 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 
+import { TranslatableError } from '@/lib/translations';
+
 type AuthUser = {
   id: string;
   email: string;
@@ -21,7 +23,8 @@ type AuthUser = {
 type AuthState = 'loading' | 'signed-in' | 'signed-out' | 'error';
 
 type AuthContextValue = {
-  error: string | null;
+  // The caught error, so screens can show it in the chosen language.
+  error: unknown;
   refreshSession: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -39,7 +42,7 @@ const NATIVE_AUTH_ORIGIN = 'https://agriadvisorai-33wk.onrender.com';
 function createNeonAuthClient() {
   const baseURL = process.env.EXPO_PUBLIC_NEON_AUTH_URL?.trim();
   if (!baseURL) {
-    throw new Error('Set EXPO_PUBLIC_NEON_AUTH_URL before signing in.');
+    throw new TranslatableError('error.authNotConfigured');
   }
 
   return createAuthClient({
@@ -69,18 +72,20 @@ export async function getAccessToken(): Promise<string> {
     method: 'GET',
   });
   if (result.error) {
-    throw new Error(result.error.message ?? 'Your sign-in session has expired. Sign in again.');
+    throw result.error.message
+      ? new Error(result.error.message)
+      : new TranslatableError('error.sessionExpired');
   }
   const token = result.data?.token;
   if (!token) {
-    throw new Error('Your sign-in session has expired. Sign in again.');
+    throw new TranslatableError('error.sessionExpired');
   }
   return token;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>('loading');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
 
   const refreshSession = useCallback(async () => {
@@ -102,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState('error');
       setError(
         sessionError instanceof Error
-          ? sessionError.message
-          : 'The sign-in service could not be reached.',
+          ? sessionError
+          : new TranslatableError('error.authUnreachable'),
       );
     }
   }, []);
@@ -121,7 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = useCallback(async (name: string, email: string, password: string) => {
     const result = await getNeonAuthClient().signUp.email({ name, email, password });
     if (result.error) {
-      throw new Error(result.error.message ?? 'Registration failed. Check your details and retry.');
+      throw result.error.message
+        ? new Error(result.error.message)
+        : new TranslatableError('register.failed');
     }
   }, []);
 

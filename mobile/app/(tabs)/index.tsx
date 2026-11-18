@@ -9,168 +9,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getLocales } from 'expo-localization';
 
-import {
-  askAssistant,
-  type AssistantResponse,
-  type SupportedLocale,
-} from '@/lib/assistant';
+import { askAssistant, type AssistantResponse } from '@/lib/assistant';
+import { useLanguage } from '@/lib/i18n';
 
 type ConversationItem =
   | { id: string; role: 'user'; text: string }
   | { id: string; role: 'assistant'; response: AssistantResponse };
-
-const COPY: Record<
-  SupportedLocale,
-  {
-    title: string;
-    subtitle: string;
-    localeNote: string;
-    emptyTitle: string;
-    emptyDescription: string;
-    quickPrompts: string[];
-    questionLabel: string;
-    placeholder: string;
-    sendLabel: string;
-    loading: string;
-    errorTitle: string;
-    errorMessage: string;
-    retry: string;
-    citationTitle: string;
-    handoffTitle: string;
-    queueLabels: Record<'general_support' | 'eligibility_review' | 'content_curators', string>;
-    disclaimer: string;
-    eligibility: string;
-    escalation: string;
-    standard: string;
-  }
-> = {
-  en: {
-    title: 'AgriAdvisor AI',
-    subtitle: 'Workplace support',
-    localeNote: 'Using English',
-    emptyTitle: 'Guidance grounded in approved sources.',
-    emptyDescription:
-      'Ask a question to search the approved library. Matching passages are shown with citations. If no source matches, specialist review is required and no live transfer occurs.',
-    quickPrompts: [
-      'I need help with a VPN error.',
-      'Can someone review my benefit eligibility?',
-      'I have a question about relocation support.',
-    ],
-    questionLabel: 'Ask a workplace question',
-    placeholder: 'Write your question',
-    sendLabel: 'Send question',
-    loading: 'Preparing a safe response...',
-    errorTitle: 'The assistant is unavailable',
-    errorMessage: 'Check the API connection and try again.',
-    retry: 'Retry',
-    citationTitle: 'Approved sources',
-    handoffTitle: 'Human review required',
-    queueLabels: {
-      general_support: 'General support',
-      eligibility_review: 'Eligibility review',
-      content_curators: 'Knowledge content review',
-    },
-    disclaimer: 'Answers show source excerpts. Live support transfer is not configured.',
-    eligibility: 'Eligibility review',
-    escalation: 'Specialist review',
-    standard: 'Knowledge response',
-  },
-  afr: {
-    title: 'AgriAdvisor KI',
-    subtitle: 'Werkplekbystand',
-    localeNote: 'Afrikaans gekies',
-    emptyTitle: 'Riglyne gegrond op goedgekeurde bronne.',
-    emptyDescription:
-      'Vra \'n vraag om die goedgekeurde biblioteek te deursoek. Passende gedeeltes word met verwysings vertoon. As geen bron pas nie, is spesialishersiening nodig en vind geen regstreekse oordrag plaas nie.',
-    quickPrompts: [
-      'Ek het hulp nodig met \'n VPN-fout.',
-      'Kan iemand my geskiktheid vir voordele hersien?',
-      'Ek het \'n vraag oor verhuisingsondersteuning.',
-    ],
-    questionLabel: 'Vra \'n werkplekvraag',
-    placeholder: 'Skryf jou vraag',
-    sendLabel: 'Stuur vraag',
-    loading: 'Veilige antwoord word voorberei...',
-    errorTitle: 'Die assistent is nie beskikbaar nie',
-    errorMessage: 'Gaan die API-verbinding na en probeer weer.',
-    retry: 'Probeer weer',
-    citationTitle: 'Goedgekeurde bronne',
-    handoffTitle: 'Menslike hersiening nodig',
-    queueLabels: {
-      general_support: 'Algemene ondersteuning',
-      eligibility_review: 'Geskiktheidshersiening',
-      content_curators: 'Kennisinhoud-hersiening',
-    },
-    disclaimer: 'Antwoorde wys bronuittreksels. Regstreekse oordrag na ondersteuning is nie opgestel nie.',
-    eligibility: 'Geskiktheidshersiening',
-    escalation: 'Spesialishersiening',
-    standard: 'Kennisbasisantwoord',
-  },
-  es: {
-    title: 'AgriAdvisor AI',
-    subtitle: 'Soporte laboral',
-    localeNote: 'Idioma: español',
-    emptyTitle: 'Orientación basada en fuentes aprobadas.',
-    emptyDescription:
-      'Haz una pregunta para buscar en la biblioteca aprobada. Los pasajes coincidentes aparecen con sus citas. Si no hay coincidencias, se requiere una revisión especializada y no se realiza ninguna transferencia en directo.',
-    quickPrompts: [
-      'Necesito ayuda con un error de VPN.',
-      '¿Pueden revisar mi elegibilidad para un beneficio?',
-      'Tengo una pregunta sobre apoyo para reubicación.',
-    ],
-    questionLabel: 'Haz una pregunta laboral',
-    placeholder: 'Escribe tu pregunta',
-    sendLabel: 'Enviar pregunta',
-    loading: 'Preparando una respuesta segura...',
-    errorTitle: 'El asistente no está disponible',
-    errorMessage: 'Comprueba la conexión de la API e inténtalo de nuevo.',
-    retry: 'Reintentar',
-    citationTitle: 'Fuentes aprobadas',
-    handoffTitle: 'Se requiere revisión humana',
-    queueLabels: {
-      general_support: 'Soporte general',
-      eligibility_review: 'Revisión de elegibilidad',
-      content_curators: 'Revisión del contenido de conocimiento',
-    },
-    disclaimer: 'Las respuestas muestran extractos de fuentes. La transferencia en directo no está configurada.',
-    eligibility: 'Revisión de elegibilidad',
-    escalation: 'Revisión especializada',
-    standard: 'Respuesta de conocimiento',
-  },
-  fr: {
-    title: 'AgriAdvisor AI',
-    subtitle: 'Assistance au travail',
-    localeNote: 'Langue : français',
-    emptyTitle: 'Des conseils fondés sur des sources approuvées.',
-    emptyDescription:
-      'Posez une question pour rechercher dans la bibliothèque approuvée. Les passages correspondants sont affichés avec leurs citations. Sans résultat, un examen spécialisé est requis et aucun transfert en direct n’a lieu.',
-    quickPrompts: [
-      'J’ai besoin d’aide pour une erreur VPN.',
-      'Une personne peut-elle examiner mon admissibilité à un avantage ?',
-      'J’ai une question sur l’aide à la relocalisation.',
-    ],
-    questionLabel: 'Poser une question professionnelle',
-    placeholder: 'Écrivez votre question',
-    sendLabel: 'Envoyer la question',
-    loading: 'Préparation d’une réponse sûre...',
-    errorTitle: 'L’assistant est indisponible',
-    errorMessage: 'Vérifiez la connexion à l’API et réessayez.',
-    retry: 'Réessayer',
-    citationTitle: 'Sources approuvées',
-    handoffTitle: 'Examen humain requis',
-    queueLabels: {
-      general_support: 'Assistance générale',
-      eligibility_review: 'Examen de l’éligibilité',
-      content_curators: 'Examen du contenu de connaissances',
-    },
-    disclaimer: 'Les réponses affichent des extraits de sources. Le transfert vers le support en direct n’est pas configuré.',
-    eligibility: 'Examen de l’éligibilité',
-    escalation: 'Examen spécialisé',
-    standard: 'Réponse issue des connaissances',
-  },
-};
 
 const CARD_STYLES = {
   success: 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950',
@@ -178,20 +23,41 @@ const CARD_STYLES = {
   error: 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950',
 };
 
-function getDeviceLocale(): SupportedLocale {
-  const languageCode = getLocales()[0]?.languageCode?.toLowerCase();
-  if (languageCode === 'af' || languageCode === 'afr') return 'afr';
-  if (languageCode === 'es' || languageCode === 'fr' || languageCode === 'en') {
-    return languageCode;
-  }
-  return 'en';
-}
-
 export default function AssistantScreen() {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<ConversationItem>>(null);
-  const locale = useMemo(getDeviceLocale, []);
-  const copy = COPY[locale];
+  // The assistant is asked in the app language, so replies match the screen.
+  const { language: locale, t } = useLanguage();
+  const copy = useMemo(
+    () => ({
+      title: t('ask.title'),
+      subtitle: t('ask.subtitle'),
+      localeNote: t('ask.localeNote'),
+      emptyTitle: t('ask.emptyTitle'),
+      emptyDescription: t('ask.emptyDescription'),
+      quickPrompts: [t('ask.prompt1'), t('ask.prompt2'), t('ask.prompt3')],
+      questionLabel: t('ask.questionLabel'),
+      placeholder: t('ask.placeholder'),
+      sendLabel: t('ask.sendLabel'),
+      loading: t('ask.loading'),
+      errorTitle: t('ask.errorTitle'),
+      errorMessage: t('ask.errorMessage'),
+      retry: t('common.retry'),
+      citationTitle: t('ask.citationTitle'),
+      sourceLabel: t('ask.sourceLabel'),
+      handoffTitle: t('ask.handoffTitle'),
+      queueLabels: {
+        general_support: t('ask.queue.general_support'),
+        eligibility_review: t('ask.queue.eligibility_review'),
+        content_curators: t('ask.queue.content_curators'),
+      },
+      disclaimer: t('ask.disclaimer'),
+      eligibility: t('ask.eligibility'),
+      escalation: t('ask.escalation'),
+      standard: t('ask.standard'),
+    }),
+    [t],
+  );
   const [messages, setMessages] = useState<ConversationItem[]>([]);
   const [draft, setDraft] = useState('');
   const [lastQuestion, setLastQuestion] = useState('');
@@ -272,7 +138,7 @@ export default function AssistantScreen() {
                   key={citation.match_id}
                   className="mb-2 rounded-lg bg-slate-100 px-3 py-2 dark:bg-zinc-800">
                   <Text className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    {citation.title} [Source: {citation.source_id}]
+                    {citation.title} [{copy.sourceLabel}: {citation.source_id}]
                   </Text>
                   {citation.location ? (
                     <Text className="mt-1 text-xs text-slate-500 dark:text-slate-400">

@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { LanguageProvider, useLanguage } from '@/lib/i18n';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Redirect, useSegments, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -39,15 +40,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { error, refreshSession, state, user } = useAuth();
+  const { errorMessage, t } = useLanguage();
   const segments = useSegments();
 
   useEffect(() => {
@@ -63,17 +67,17 @@ function RootLayoutNav() {
       <SafeAreaView className="flex-1 justify-center bg-slate-50 px-6 dark:bg-zinc-950">
         <View className="mx-auto w-full max-w-md">
           <Text className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-            Sign-in is unavailable
+            {t('app.signInUnavailable')}
           </Text>
           <Text accessibilityRole="alert" className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            {error}
+            {errorMessage(error, 'error.authUnreachable')}
           </Text>
           <Pressable
-            accessibilityLabel="Retry sign-in"
+            accessibilityLabel={t('app.retrySignIn')}
             accessibilityRole="button"
             className="mt-5 min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 active:opacity-75"
             onPress={() => void refreshSession()}>
-            <Text className="text-sm font-semibold text-white">Retry</Text>
+            <Text className="text-sm font-semibold text-white">{t('common.retry')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
