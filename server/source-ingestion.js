@@ -333,6 +333,9 @@ export function createSourceIngestion({
   storage,
   fetchResource = fetchPublicResource,
   createId = randomUUID,
+  // Optional { embedPassages } from embeddings.js. Without it, passages are saved
+  // without embeddings and found by keyword search until the catch-up script runs.
+  embedder = null,
 }) {
   return {
     list: () => repository.listSources(),
@@ -388,9 +391,24 @@ export function createSourceIngestion({
         throw new SourceIngestionError('No searchable text could be extracted from this source.', 422);
       }
 
+      if (embedder) {
+        try {
+          const embeddings = await embedder.embedPassages(
+            chunks.map((chunk) => ({ title, location: chunk.location, content: chunk.content })),
+          );
+          chunks.forEach((chunk, index) => {
+            chunk.embedding = embeddings[index];
+          });
+        } catch (error) {
+          // Save anyway; `pnpm backfill:embeddings` adds the embeddings later.
+          console.error('Passage embedding failed; saving without embeddings.', error?.message);
+        }
+      }
+
       const id = createId();
       const objectKey = pdfBytes ? `sources/${id}.pdf` : null;
-      const actualStorage = storage ?? getStorage();
+      // File storage is only needed for PDFs; links and pasted text are stored as text only.
+      const actualStorage = objectKey ? storage ?? getStorage() : null;
       if (objectKey) await actualStorage.putObject(objectKey, pdfBytes);
 
       try {

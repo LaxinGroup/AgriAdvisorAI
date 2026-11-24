@@ -88,6 +88,34 @@ Configure the server's `CORS_ORIGINS` with the exact web app origins when using 
 Install dependencies from the repository root, then start the server from `server`
 and the Expo app from `mobile`. The server binds to `PORT` (default `3000`).
 
+## 6. Enable written answers (Google Gemini)
+
+1. Create an API key in Google AI Studio.
+2. Set `GEMINI_API_KEY` in the server environment (Render's environment variables in
+   production, the untracked `server/.env` locally). Never put it in the mobile app,
+   `eas.json`, or any `EXPO_PUBLIC_` variable.
+3. Optionally set `GEMINI_MODEL`; the default is `gemini-3.5-flash-lite`.
+
+Without a key the server returns source excerpts only. On Google's free tier, request
+content is used to improve Google's products (see Google's Gemini API pricing and terms);
+the paid tier does not use it. Free-tier rate limits apply; when a request fails or is
+rate-limited, the server returns the matching excerpts instead.
+
+## 7. Enable meaning-based search (Gemini embeddings + pgvector)
+
+1. Apply the updated `schema.sql` to the database **before** deploying this server
+   version. It enables Neon's `vector` extension, adds a nullable 768-number `embedding`
+   column to `knowledge_source_chunks`, and creates an HNSW cosine index. Existing data
+   is not changed.
+2. Optionally set `GEMINI_EMBEDDING_MODEL`; the default is `gemini-embedding-2`.
+3. From `server`, run `pnpm backfill:embeddings` once to embed passages added before this
+   change. Run it again any time sources were saved while the embedding service was
+   unavailable; it only processes passages without an embedding.
+
+Each passage is embedded once when its source is added, and each question once when it
+is asked. If an embedding call fails, the source is still saved and questions fall back
+to keyword search.
+
 ## Processing behavior
 
 - Public HTTP/HTTPS webpages and direct PDF links are accepted. Private and local
@@ -95,6 +123,16 @@ and the Expo app from `mobile`. The server binds to `PORT` (default `3000`).
 - PDF files are limited to 10 MB. Text-based PDFs are supported; scanned PDFs are
   not OCR-processed.
 - Pasted text requires a title and is limited to 100,000 characters.
-- Sources are split into 800-word chunks with 120-word overlap. Ask returns up to
-  four matching excerpts with source title, URL or reference, and page or section.
-- No AI-generated source summaries are produced.
+- Sources are split into 800-word chunks with 120-word overlap. Each passage is embedded
+  together with its source title and section heading. Ask finds up to eight passages
+  closest in meaning to the question (within a distance cut-off); passages that have no
+  embedding yet are found by keyword search instead. Results include source title, URL
+  or reference, and page or section.
+- When Gemini is enabled and passages are found, Gemini writes a short answer from those
+  passages only, in the app language, and lists the passages it used. The server keeps
+  only citations for passages it sent. If the passages do not answer the question, the
+  response routes to specialist review. When no passage matches, Gemini is not called.
+- Eligibility questions are never decided: an answer may describe written criteria, and
+  the eligibility warning and human review always remain.
+- Questions and passages are sent with `store: false`, so Gemini does not keep the
+  interaction for later retrieval.

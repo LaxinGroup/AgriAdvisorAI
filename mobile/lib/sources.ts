@@ -1,6 +1,7 @@
 import type { DocumentPickerAsset } from 'expo-document-picker';
 
 import { getAccessToken } from '@/lib/auth';
+import { API_BASE_URL } from '@/lib/config';
 import { TranslatableError } from '@/lib/translations';
 
 export type KnowledgeSource = {
@@ -17,8 +18,6 @@ type SourceListResponse = {
   canManage: boolean;
 };
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '') ?? 'http://localhost:3000/api';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

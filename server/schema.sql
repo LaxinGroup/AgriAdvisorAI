@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS knowledge_source_chunks (
 CREATE INDEX IF NOT EXISTS knowledge_source_chunks_search_idx
   ON knowledge_source_chunks USING gin (search_vector);
 
+-- Meaning-based search: a 768-number embedding per passage (gemini-embedding-2).
+-- Passages without an embedding are filled in by `pnpm backfill:embeddings`.
+CREATE EXTENSION IF NOT EXISTS vector;
+
+ALTER TABLE knowledge_source_chunks
+  ADD COLUMN IF NOT EXISTS embedding vector(768);
+
+CREATE INDEX IF NOT EXISTS knowledge_source_chunks_embedding_idx
+  ON knowledge_source_chunks USING hnsw (embedding vector_cosine_ops);
+
 CREATE TABLE IF NOT EXISTS curator_allowlist (
   auth_user_id text PRIMARY KEY,
   added_at timestamptz NOT NULL DEFAULT now()

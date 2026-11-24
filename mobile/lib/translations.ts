@@ -83,7 +83,8 @@ export const en = {
   'ask.queue.general_support': 'General support',
   'ask.queue.eligibility_review': 'Eligibility review',
   'ask.queue.content_curators': 'Knowledge content review',
-  'ask.disclaimer': 'Answers show source excerpts. Live support transfer is not configured.',
+  'ask.disclaimer':
+    'AI answers use approved sources only; check the citations. Live support transfer is not configured.',
   'ask.eligibility': 'Eligibility review',
   'ask.escalation': 'Specialist review',
   'ask.standard': 'Knowledge response',
@@ -305,7 +306,7 @@ const afr: Translations = {
   'ask.queue.eligibility_review': 'Geskiktheidshersiening',
   'ask.queue.content_curators': 'Kennisinhoud-hersiening',
   'ask.disclaimer':
-    'Antwoorde wys bronuittreksels. Regstreekse oordrag na ondersteuning is nie opgestel nie.',
+    'KI-antwoorde gebruik slegs goedgekeurde bronne; gaan die verwysings na. Regstreekse oordrag na ondersteuning is nie opgestel nie.',
   'ask.eligibility': 'Geskiktheidshersiening',
   'ask.escalation': 'Spesialishersiening',
   'ask.standard': 'Kennisbasisantwoord',
@@ -444,7 +445,7 @@ const es: Translations = {
   'ask.queue.eligibility_review': 'Revisión de elegibilidad',
   'ask.queue.content_curators': 'Revisión del contenido de conocimiento',
   'ask.disclaimer':
-    'Las respuestas muestran extractos de fuentes. La transferencia en directo no está configurada.',
+    'Las respuestas de IA usan solo fuentes aprobadas; revisa las citas. La transferencia en directo no está configurada.',
   'ask.eligibility': 'Revisión de elegibilidad',
   'ask.escalation': 'Revisión especializada',
   'ask.standard': 'Respuesta de conocimiento',
@@ -585,7 +586,7 @@ const fr: Translations = {
   'ask.queue.eligibility_review': 'Examen de l’éligibilité',
   'ask.queue.content_curators': 'Examen du contenu de connaissances',
   'ask.disclaimer':
-    'Les réponses affichent des extraits de sources. Le transfert vers le support en direct n’est pas configuré.',
+    'Les réponses de l’IA s’appuient uniquement sur des sources approuvées ; vérifiez les citations. Le transfert vers le support en direct n’est pas configuré.',
   'ask.eligibility': 'Examen de l’éligibilité',
   'ask.escalation': 'Examen spécialisé',
   'ask.standard': 'Réponse issue des connaissances',

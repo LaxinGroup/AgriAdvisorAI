@@ -1,7 +1,43 @@
 import pg from 'pg';
 
+import { toVectorLiteral } from './embeddings.js';
+
 const { Pool } = pg;
 let pool;
+
+const MAX_SEARCH_WORDS = 32;
+
+// Cosine distance (0 = same meaning, 2 = opposite) above which a passage is treated as
+// unrelated. Calibrated on real data; see prompts/meaning-search-plan.md.
+export const DEFAULT_MAX_DISTANCE = 0.35;
+
+// Combines meaning-based results (closest first, within the cut-off) with keyword
+// results, without duplicates, up to `limit` passages.
+export function mergeSearchResults(vectorRows, keywordRows, limit, maxDistance = DEFAULT_MAX_DISTANCE) {
+  const merged = [];
+  const seen = new Set();
+  const closeEnough = vectorRows.filter((row) => Number(row.distance) <= maxDistance);
+  for (const row of [...closeEnough, ...keywordRows]) {
+    if (merged.length >= limit) break;
+    if (seen.has(row.match_id)) continue;
+    seen.add(row.match_id);
+    const { distance: _distance, rank: _rank, ...passage } = row;
+    merged.push(passage);
+  }
+  return merged;
+}
+
+// Turns a question into a full-text query that matches passages containing ANY of its
+// words (ranked so passages with more matching words come first). Words shorter than
+// three letters are skipped unless they are numbers. Only letters and digits are kept,
+// so the result is always a valid to_tsquery expression.
+export function buildSearchQuery(text) {
+  const words = String(text).toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const keywords = [...new Set(words)]
+    .filter((word) => word.length >= 3 || /^\p{N}+$/u.test(word))
+    .slice(0, MAX_SEARCH_WORDS);
+  return keywords.map((word) => `'${word}'`).join(' | ');
+}
 
 export function getPool() {
   if (!process.env.DATABASE_URL) {
@@ -39,9 +75,15 @@ export const sourceRepository = {
       for (const chunk of chunks) {
         await client.query(
           `INSERT INTO knowledge_source_chunks
-            (source_id, chunk_index, location, content)
-           VALUES ($1, $2, $3, $4)`,
-          [id, chunk.index, chunk.location, chunk.content],
+            (source_id, chunk_index, location, content, embedding)
+           VALUES ($1, $2, $3, $4, $5::vector)`,
+          [
+            id,
+            chunk.index,
+            chunk.location,
+            chunk.content,
+            chunk.embedding ? toVectorLiteral(chunk.embedding) : null,
+          ],
         );
       }
       await client.query('COMMIT');
@@ -109,10 +151,15 @@ export const sourceRepository = {
     return result.rows[0];
   },
 
-  async searchSources(query, limit = 4) {
+  // Keyword search. With `onlyWithoutEmbedding`, only passages that have no embedding yet
+  // are searched (the backup for passages the meaning search cannot see).
+  async keywordSearch(query, limit, { onlyWithoutEmbedding = false } = {}) {
+    const searchQuery = buildSearchQuery(query);
+    if (!searchQuery) return [];
+
     const result = await getPool().query(
       `WITH search_query AS (
-         SELECT websearch_to_tsquery('simple', $1) AS value
+         SELECT to_tsquery('simple', $1) AS value
        )
        SELECT c.id::text AS match_id,
               s.id::text AS source_id,
@@ -127,11 +174,65 @@ export const sourceRepository = {
        WHERE s.deleted_at IS NULL
          AND search_query.value <> ''::tsquery
          AND c.search_vector @@ search_query.value
+         AND (NOT $3::boolean OR c.embedding IS NULL)
        ORDER BY rank DESC, s.created_at DESC, c.chunk_index
        LIMIT $2`,
-      [query, limit],
+      [searchQuery, limit, onlyWithoutEmbedding],
     );
     return result.rows;
+  },
+
+  // Meaning-based search: the passages whose embeddings are closest to the question's.
+  async vectorSearch(questionEmbedding, limit) {
+    const result = await getPool().query(
+      `SELECT c.id::text AS match_id,
+              s.id::text AS source_id,
+              s.title,
+              s.source_url AS url_or_reference,
+              c.location,
+              c.content AS excerpt,
+              c.embedding <=> $1::vector AS distance
+       FROM knowledge_source_chunks c
+       JOIN knowledge_sources s ON s.id = c.source_id
+       WHERE s.deleted_at IS NULL
+         AND c.embedding IS NOT NULL
+       ORDER BY c.embedding <=> $1::vector
+       LIMIT $2`,
+      [toVectorLiteral(questionEmbedding), limit],
+    );
+    return result.rows;
+  },
+
+  // Meaning-based search when a question embedding is given, keyword search otherwise.
+  async searchSources(query, limit = 8, { questionEmbedding, maxDistance } = {}) {
+    if (!questionEmbedding) {
+      return mergeSearchResults([], await this.keywordSearch(query, limit), limit);
+    }
+    const [vectorRows, keywordRows] = await Promise.all([
+      this.vectorSearch(questionEmbedding, limit),
+      this.keywordSearch(query, limit, { onlyWithoutEmbedding: true }),
+    ]);
+    return mergeSearchResults(vectorRows, keywordRows, limit, maxDistance);
+  },
+
+  async listChunksWithoutEmbedding(limit) {
+    const result = await getPool().query(
+      `SELECT c.id::text AS id, s.title, c.location, c.content
+       FROM knowledge_source_chunks c
+       JOIN knowledge_sources s ON s.id = c.source_id
+       WHERE s.deleted_at IS NULL AND c.embedding IS NULL
+       ORDER BY s.created_at, c.chunk_index
+       LIMIT $1`,
+      [limit],
+    );
+    return result.rows;
+  },
+
+  async setChunkEmbedding(id, embedding) {
+    await getPool().query(
+      'UPDATE knowledge_source_chunks SET embedding = $2::vector WHERE id = $1',
+      [id, toVectorLiteral(embedding)],
+    );
   },
 };
 

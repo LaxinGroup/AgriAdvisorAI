@@ -5,9 +5,11 @@ import { resolve } from 'node:path';
 import express from 'express';
 import multer from 'multer';
 
-import { createAssistantResponse, validateAssistantRequest } from './assistant.js';
+import { createAnsweredResponse, validateAssistantRequest } from './assistant.js';
 import { createAuthentication, createCuratorAuthorization } from './auth.js';
 import { sourceRepository } from './database.js';
+import { createGeminiEmbedder } from './embeddings.js';
+import { createGeminiAnswerer } from './gemini.js';
 import { SourceIngestionError, createSourceIngestion } from './source-ingestion.js';
 
 const PROFILE_LANGUAGES = new Set(['en', 'afr', 'es', 'fr']);
@@ -28,11 +30,30 @@ export function createApp({
   verifyToken,
   repository = sourceRepository,
   ingestion,
+  // Pass null to turn off written answers (tests do this); undefined uses Gemini when
+  // GEMINI_API_KEY is set.
+  generateAnswer,
+  // Same convention for meaning-based search: null turns it off.
+  embedder,
 } = {}) {
   const app = express();
+  const answerer = generateAnswer === undefined ? createGeminiAnswerer() : generateAnswer;
+  const searchEmbedder = embedder === undefined ? createGeminiEmbedder() : embedder;
   const authenticate = createAuthentication({ authUrl, verifyToken });
   const requireCurator = createCuratorAuthorization((userId) => repository.isCurator(userId));
-  const sourceIngestion = ingestion ?? createSourceIngestion({ repository });
+  const sourceIngestion =
+    ingestion ?? createSourceIngestion({ repository, embedder: searchEmbedder });
+
+  // Embeds the question for meaning-based search; on failure, search uses keywords only.
+  async function embedQuestion(message) {
+    if (!searchEmbedder) return undefined;
+    try {
+      return await searchEmbedder.embedQuestion(message);
+    } catch (error) {
+      console.error('Question embedding failed; using keyword search.', error?.message);
+      return undefined;
+    }
+  }
   const uploadPdf = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024, files: 1 },
@@ -78,8 +99,11 @@ export function createApp({
       return;
     }
 
-    const matches = await repository.searchSources(validation.message, 4);
-    response.json(createAssistantResponse(validation.message, validation.locale, matches));
+    const questionEmbedding = await embedQuestion(validation.message);
+    const matches = await repository.searchSources(validation.message, 8, { questionEmbedding });
+    response.json(
+      await createAnsweredResponse(validation.message, validation.locale, matches, answerer),
+    );
   });
 
   app.post('/api/profile', authenticate, async (request, response) => {

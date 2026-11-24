@@ -111,6 +111,96 @@ test('public webpage titles and heading locations are retained', async () => {
   assert.equal(repository.chunks.get(source.id)[0].location, 'Section: Remote access');
 });
 
+test('links and pasted text do not need file storage to be configured', async () => {
+  const storageVariables = [
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_ENDPOINT_URL_S3',
+    'AWS_REGION',
+    'SOURCES_BUCKET',
+  ];
+  const saved = Object.fromEntries(storageVariables.map((name) => [name, process.env[name]]));
+  for (const name of storageVariables) delete process.env[name];
+
+  try {
+    const repository = new MemoryRepository();
+    // No `storage` passed, so the real storage setup would run if it were requested.
+    const ingestion = createSourceIngestion({
+      repository,
+      fetchResource: async () => ({
+        url: 'https://support.example.org/policy',
+        contentType: 'text/html',
+        bytes: Buffer.from('<html><head><title>Policy</title></head><body><p>Approved text.</p></body></html>'),
+      }),
+    });
+
+    const link = await ingestion.ingest({
+      body: { type: 'link', url: 'https://support.example.org/policy' },
+      userId: 'curator-user',
+    });
+    const paragraph = await ingestion.ingest({
+      body: { type: 'paragraph', title: 'Note', text: 'Approved pasted text.' },
+      userId: 'curator-user',
+    });
+
+    assert.equal(link.source_type, 'webpage');
+    assert.equal(paragraph.source_type, 'paragraph');
+    assert.equal(repository.sources.size, 2);
+  } finally {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+});
+
+test('passages are saved with embeddings that include the title and heading', async () => {
+  const repository = new MemoryRepository();
+  const received = [];
+  const ingestion = createTestService(repository, {
+    embedder: {
+      async embedPassages(passages) {
+        received.push(...passages);
+        return passages.map((_, index) => [index, 0.5]);
+      },
+    },
+  });
+
+  const source = await ingestion.ingest({
+    body: { type: 'paragraph', title: 'Bursary policy', text: 'Applications open in May.' },
+    userId: 'curator-user',
+  });
+
+  assert.deepEqual(received, [
+    { title: 'Bursary policy', location: 'Paragraph', content: 'Applications open in May.' },
+  ]);
+  assert.deepEqual(repository.chunks.get(source.id)[0].embedding, [0, 0.5]);
+});
+
+test('a source is still saved when embedding fails', async () => {
+  const repository = new MemoryRepository();
+  const ingestion = createTestService(repository, {
+    embedder: {
+      async embedPassages() {
+        throw new Error('quota exceeded');
+      },
+    },
+  });
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const source = await ingestion.ingest({
+      body: { type: 'paragraph', title: 'Note', text: 'Saved without embeddings.' },
+      userId: 'curator-user',
+    });
+    const chunk = repository.chunks.get(source.id)[0];
+    assert.equal(chunk.content, 'Saved without embeddings.');
+    assert.equal(chunk.embedding, undefined);
+  } finally {
+    console.error = originalError;
+  }
+});
+
 test('direct PDF uploads reject non-PDF content and oversized files', async () => {
   const repository = new MemoryRepository();
   const ingestion = createTestService(repository);
@@ -177,6 +267,8 @@ const app = createApp({
   },
   repository,
   ingestion,
+  generateAnswer: null,
+  embedder: null,
 });
 const server = app.listen(0, '127.0.0.1');
 const baseUrl = await new Promise((resolve, reject) => {
